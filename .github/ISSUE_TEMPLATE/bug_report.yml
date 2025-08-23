@@ -1,0 +1,64 @@
+name: "🐛 Bug Report"
+description: "Report a bug or unexpected behavior to help us improve."
+title: "Bug: [BRIEF DESCRIPTION]"
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time to file a bug report! Please provide as much detail as possible.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: "Describe the Bug"
+      description: "A clear and concise description of what the bug is. What happened?"
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: "Steps to Reproduce"
+      description: "How can we reproduce the issue? Please be specific."
+      placeholder: |
+        1. I configured my input folder using `chromascale set --input ...`
+        2. I copied a 100kb PNG file into the folder.
+        3. I checked the output folder after 1 minute...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: "Expected Behavior"
+      description: "What did you expect to happen?"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: "Log Output"
+      description: "This is the most important part! Please paste the relevant output from `chromascale app-logs` and `chromascale service-logs`."
+      placeholder: "Paste logs here..."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: "Operating System"
+      description: "What operating system are you using?"
+      options:
+        - "Ubuntu 22.04"
+        - "Ubuntu 20.04"
+        - "Other Linux Distro"
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: "Additional Context"
+      description: "Add any other context about the problem here (e.g., screenshots, hardware details)."
