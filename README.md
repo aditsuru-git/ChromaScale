@@ -23,31 +23,53 @@
 [![Issues][issues-shield]][issues-url]
 [![License][license-shield]][license-url]
 [![Release][release-shield]][release-url]
+[![Last Commit][last-commit-shield]][last-commit-url]
 
 </div>
 
-## About The Project
+<details>
+  <summary>Table of Contents</summary>
+  <ol>
+    <li><a href="#-about-the-project">About The Project</a></li>
+    <li><a href="#-built-with">Built With</a></li>
+    <li><a href="#-getting-started">Getting Started</a></li>
+    <li><a href="#-usage">Usage</a></li>
+    <li><a href="#-roadmap">Roadmap</a></li>
+    <li><a href="#-contributing">Contributing</a></li>
+    <li><a href="#-license">License</a></li>
+    <li><a href="#-acknowledgments">Acknowledgments</a></li>
+  </ol>
+</details>
+
+## 🎯 About The Project
+
+> [!CAUTION]
+> ChromaScale is in a beta version. Please be cautious while using the application and setting it up. If you find any bugs, please report them!
 
 <div align="center">
-  <img src="./assets/demo.gif" alt="ChromaScale Demo" width="100%" style="max-width: 800px;">
+  <img src="./assets/demo-image.png" alt="Demo" width="100%" style="max-width: 1200px;">
 </div>
 
 ChromaScale is an automated image upscaling service for Ubuntu that runs quietly in the background. Simply drop your low-resolution images into a target folder, and ChromaScale uses a powerful AI model to enhance them and save to the configured output directory — no manual intervention required.
 
+<div align="center">
+  <img src="./assets/demo-gif.gif" alt="Demo" width="100%" style="max-width: 1200px;">
+</div>
+
 **Core Features:**
 
-- **Fully Automated:** Runs as a background service, starts on boot, and automatically restarts on crash.
-- **High-Quality Upscaling:** Uses the Real-ESRGAN model to deliver 4x upscaling while handling noise and compression artifacts.
-- **Queue-Based Processing:** Handles multiple images arriving simultaneously without missing any.
-- **Configurable:** Input/output folders and “replace-file” mode can be set with a simple CLI tool.
-- **GPU Accelerated:** Automatically uses your NVIDIA GPU if available; falls back to CPU otherwise.
+- **✨ Fully Automated:** Runs as a background service, starts on boot, and automatically restarts on crash.
+- **🖼️ High-Quality Upscaling:** Uses the Real-ESRGAN model to deliver 4x upscaling while handling noise and artifacts.
+- **⚡ Queue-Based Processing:** Handles multiple images arriving simultaneously without missing any.
+- **🔧 Configurable:** Input/output folders and “replace-file” mode can be set with a simple CLI tool.
+- **💻 GPU Accelerated:** Automatically uses your NVIDIA GPU if available; falls back to CPU otherwise.
 
-### Built With
+### 🛠️ Built With
 
 [![Python-badge][Python-badge]][Python-url]
 [![PyTorch-badge][PyTorch-badge]][PyTorch-url]
 
-## Getting Started
+## 🚀 Getting Started
 
 Follow these steps to get ChromaScale running on your Ubuntu system.
 
@@ -55,7 +77,7 @@ Follow these steps to get ChromaScale running on your Ubuntu system.
 
 - An Ubuntu-based Linux distribution with `systemd`.
 - Python 3.10+
-- `uv` package manager
+- `uv` and `curl` package managers.
 - Optional: An NVIDIA GPU with CUDA drivers for faster processing.
 
 To install `uv`, run the following command:
@@ -84,7 +106,8 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
     ./setup.sh
     ```
     This script handles everything for you:
-    - Copies all application files, including the AI model, to a safe location (`~/.chromascale_home`).
+    - Copies all application files to a safe location (`~/.chromascale_home`).
+    - Downloads the AI model weights.
     - Creates an isolated Python virtual environment.
     - Installs all necessary dependencies.
     - Sets up and enables a `systemd` background service.
@@ -92,14 +115,11 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 
 The service will start automatically once the setup is complete.
 
-## Usage
-
-> [!CAUTION]
-> ChromaScale is in a beta version. Please be cautious while using the application and setting it up. If you find any bugs, please report them!
+## 💡 Usage
 
 ChromaScale is designed to run in the background with zero effort. You can manage and configure the service using the simple `chromascale` CLI.
 
-#### **Initial Setup Example**
+#### **Quick Start Example**
 
 First, tell ChromaScale which folders to use.
 
@@ -175,7 +195,7 @@ Now, any image you drop into `~/Pictures/To-Upscale` will be automatically proce
 
   > **Note:** The `output` directory is ignored when `--replace` mode is active.
 
-## Roadmap
+## 🗺️ Roadmap
 
 - [x] Core background service with Real-ESRGAN
 - [x] Queue-based image processing
@@ -183,13 +203,13 @@ Now, any image you drop into `~/Pictures/To-Upscale` will be automatically proce
 - [ ] Support for additional upscaling models (e.g., anime)
 - [ ] Optional GUI for configuration and monitoring
 
-See open issues for a full list of proposed features.
+See open [issues](https://github.com/aditsuru-git/ChromaScale/issues) for a full list of proposed features.
 
-## Contributing
+## 🤝 Contributing
 
 Contributions are welcome! Please read our **[Contribution Guide](CONTRIBUTING.md)** for details on how to submit pull requests and follow the code of conduct.
 
-## License
+## 📜 License
 
 Distributed under the MIT License. See `LICENSE` for details.
 
@@ -197,18 +217,13 @@ Distributed under the MIT License. See `LICENSE` for details.
 > This app uses the Real-ESRGAN model (BSD 3-Clause License, Copyright (c) 2021, Xintao Wang).
 > Redistribution and use of the model are subject to the BSD 3-Clause terms.
 
-## Acknowledgments
+## 🙏 Acknowledgments
 
 - [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN) for the AI upscaling model.
 - [Watchdog](https://pypi.org/project/watchdog/) for robust folder monitoring.
 - [Astral](https://astral.sh/) for `uv` package management.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
-<h1></h1>
-
-<div align="center">
-  <img src="https://github.com/aditsuru-git/readme-template/blob/main/assets/footer.png?raw=true" alt="Footer Banner" width="100%" style="max-width: 1200px;">
-</div>
 
 <!-- MARKDOWN LINKS & IMAGES -->
 
@@ -224,6 +239,8 @@ Distributed under the MIT License. See `LICENSE` for details.
 [license-url]: https://github.com/aditsuru-git/ChromaScale/blob/main/LICENSE
 [release-shield]: https://img.shields.io/github/v/release/aditsuru-git/ChromaScale?include_prereleases
 [release-url]: https://github.com/aditsuru-git/ChromaScale/releases
+[last-commit-shield]: https://img.shields.io/github/last-commit/aditsuru-git/ChromaScale
+[last-commit-url]: https://github.com/aditsuru-git/ChromaScale/commits/main
 [Python-badge]: https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white
 [Python-url]: https://www.python.org/
 [PyTorch-badge]: https://img.shields.io/badge/PyTorch-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white
