@@ -110,7 +110,8 @@ def main():
         logging.error(f"CRITICAL: Input directory '{input_dir}' does not exist or is not set.")
         return
 
-    model_path = WORK_DIR / "src" / "RealESRGAN_x4plus.pth"
+    # CORRECTED: The model path is in the WORK_DIR root, not inside src.
+    model_path = WORK_DIR / "RealESRGAN_x4plus.pth"
     upscaler = ImageUpscaler(str(model_path))
     
     queue = Queue()
@@ -124,7 +125,6 @@ def main():
 
     try:
         while True:
-            # CORRECTED LINE: Call get_ready_files() on the event_handler directly.
             ready_files = event_handler.get_ready_files()
             for file in ready_files:
                 logging.info(f"Job accepted: {Path(file).name}")
