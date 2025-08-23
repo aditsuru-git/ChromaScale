@@ -147,6 +147,10 @@ Contributions are welcome! Please read our **[Contribution Guide](CONTRIBUTING.m
 
 Distributed under the MIT License. See `LICENSE` for details.
 
+> [!IMPORTANT]
+> This app uses the Real-ESRGAN model (BSD 3-Clause License, Copyright (c) 2021, Xintao Wang).
+> Redistribution and use of the model are subject to the BSD 3-Clause terms.
+
 ## Acknowledgments
 
 - [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN) for the AI upscaling model.
@@ -154,6 +158,7 @@ Distributed under the MIT License. See `LICENSE` for details.
 - [Astral](https://astral.sh/) for `uv` package management.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
+<h1></h1>
 
 <div align="center">
   <img src="https://github.com/aditsuru-git/readme-template/blob/main/assets/footer-team.png?raw=true" alt="Footer Banner" width="100%" style="max-width: 1200px;">
