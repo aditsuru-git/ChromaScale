@@ -1,0 +1,23 @@
+[project]
+name = "chromascale"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = "==3.10.12"
+dependencies = [
+    "torch==1.13.1",
+    "torchvision==0.14.1",
+    "torchaudio==0.13.1",
+    "basicsr",
+    "numpy==1.25.0",
+    "pillow",
+    "realesrgan",
+    "watchdog>=6.0.0",
+]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+
+
