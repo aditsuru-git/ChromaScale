@@ -53,11 +53,12 @@ Follow these steps to get ChromaScale running on your Ubuntu system.
 
 ### Prerequisites
 
-- Ubuntu with Python 3.10+
+- An Ubuntu-based Linux distribution with `systemd`.
+- Python 3.10+
 - `uv` package manager
-- Optional: NVIDIA GPU for faster processing
+- Optional: An NVIDIA GPU with CUDA drivers for faster processing.
 
-Install `uv`:
+To install `uv`, run the following command:
 
 ```sh
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -65,69 +66,114 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 
 ### Installation
 
-1. Clone the repository:
+1.  Clone the repository and navigate into the directory:
 
-```sh
-git clone https://github.com/aditsuru-git/ChromaScale.git
-cd ChromaScale
-```
+    ```sh
+    git clone https://github.com/aditsuru-git/ChromaScale.git
+    cd ChromaScale
+    ```
 
-2. Run the setup script:
+2.  Make the setup script executable:
 
-```sh
-./setup.sh
-```
+    ```sh
+    chmod +x setup.sh
+    ```
 
-This will:
+3.  Run the setup script:
+    ```sh
+    ./setup.sh
+    ```
+    This script handles everything for you:
+    - Copies all application files, including the AI model, to a safe location (`~/.chromascale_home`).
+    - Creates an isolated Python virtual environment.
+    - Installs all necessary dependencies.
+    - Sets up and enables a `systemd` background service.
+    - Installs the global `chromascale` command-line tool.
 
-- Create a safe virtual environment
-- Install dependencies
-- Download the Real-ESRGAN model
-- Configure the background service
-- Install the global CLI command `image-upscaler`
-
-The service will start automatically after setup.
+The service will start automatically once the setup is complete.
 
 ## Usage
 
-ChromaScale runs automatically in the background. Manage it with the CLI:
+> [!CAUTION]
+> ChromaScale is in a beta version. Please be cautious while using the application and setting it up. If you find any bugs, please report them!
 
-**Commands:**
+ChromaScale is designed to run in the background with zero effort. You can manage and configure the service using the simple `chromascale` CLI.
 
-- Check service status:
+#### **Initial Setup Example**
 
-```sh
-image-upscaler status
-```
-
-- Enable or disable service:
+First, tell ChromaScale which folders to use.
 
 ```sh
-image-upscaler enable
-image-upscaler disable
+# Create your input and output folders
+mkdir -p ~/Pictures/To-Upscale
+mkdir -p ~/Pictures/Upscaled-Images
+
+# Configure the service to use these folders
+chromascale set --input ~/Pictures/To-Upscale --output ~/Pictures/Upscaled-Images
+
+# Restart the service to apply the new settings
+chromascale restart
 ```
 
-- Check GPU/CPU usage:
+Now, any image you drop into `~/Pictures/To-Upscale` will be automatically processed and saved in `~/Pictures/Upscaled-Images`.
 
-```sh
-image-upscaler check-gpu
-```
+---
 
-- Configure input/output folders or enable replace-file mode:
+#### **All Available Commands**
 
-```sh
-image-upscaler set input=/path/to/input output=/path/to/output replace=True
-```
+**Service Management:**
 
-> **Note:** When `replace=True`, input and output are the same, and files will be overwritten after upscaling.
+- Check if the service is running:
+  ```sh
+  chromascale status
+  ```
+- Stop the background service:
+  ```sh
+  chromascale stop
+  ```
+- Start the background service:
+  ```sh
+  chromascale start
+  ```
+- Restart the service (required after changing settings):
+  ```sh
+  chromascale restart
+  ```
 
-### Default Behavior
+**Logging & Debugging:**
 
-- Input folder: configurable via settings (`settings.ini`)
-- Output folder: configurable via settings (`settings.ini`)
-- Replace-file: optional, defaults to `False`
+- View the high-level application log (`Job accepted`, `Job finished`, etc.):
+  ```sh
+  chromascale app-logs
+  ```
+- View the low-level systemd service logs (for startup/crash issues):
+  ```sh
+  chromascale service-logs
+  ```
 
-New images dropped into the input folder are automatically queued and upscaled.
+**Configuration & Diagnostics:**
+
+- Check if an NVIDIA GPU is detected:
+  ```sh
+  chromascale check-gpu
+  ```
+- Configure the input/output folders or change the file replacement mode:
+
+  ```sh
+  # Set the folder to watch for new images
+  chromascale set --input /path/to/your/input_folder
+
+  # Set the folder to save finished images
+  chromascale set --output /path/to/your/output_folder
+
+  # Enable in-place replacement (overwrites original files)
+  chromascale set --replace
+
+  # Disable in-place replacement (saves to output folder)
+  chromascale set --no-replace
+  ```
+
+  > **Note:** The `output` directory is ignored when `--replace` mode is active.
 
 ## Roadmap
 

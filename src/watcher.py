@@ -1,52 +1,74 @@
 import time
 import os
+import configparser
+import logging
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from queue import Queue
-from threading import Thread, Lock
+from threading import Thread
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from src.upscaler import ImageUpscaler
 
-CONFIG_PATH = Path(__file__).parent / "settings.ini"
-BATCH_INTERVAL = 1.0  # seconds to batch events
+# --- Configuration ---
+WORK_DIR = Path.home() / ".chromascale_home"
+CONFIG_PATH = WORK_DIR / "src" / "settings.ini"
+LOG_FILE_PATH = WORK_DIR / "chromascale.log"
+BATCH_INTERVAL = 1.0  # seconds
+
+def setup_logging():
+    """Configures logging to a rotating file and to the console."""
+    file_handler = RotatingFileHandler(
+        LOG_FILE_PATH, maxBytes=5 * 1024 * 1024, backupCount=3
+    )
+    stream_handler = logging.StreamHandler()
+
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    file_handler.setFormatter(formatter)
+    stream_handler.setFormatter(formatter)
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    if logger.hasHandlers():
+        logger.handlers.clear()
+    logger.addHandler(file_handler)
+    logger.addHandler(stream_handler)
+
 
 class DebouncedHandler(FileSystemEventHandler):
-    """Collects new files and debounces rapid events."""
+    """Waits for file writes to stabilize before queuing."""
     def __init__(self, queue):
         self.queue = queue
-        self.lock = Lock()
-        self.pending_files = {}  # path -> last event time
+        self.pending_files = {}
 
     def on_created(self, event):
         if event.is_directory:
             return
-        if not event.src_path.lower().endswith((".png", ".jpg", ".jpeg", ".bmp", ".tiff")):
+        src_path_str = event.src_path.lower()
+        if not src_path_str.endswith((".png", ".jpg", ".jpeg", ".bmp", ".tiff")):
             return
-        with self.lock:
-            self.pending_files[event.src_path] = time.time()
+        self.pending_files[event.src_path] = time.time()
 
     def get_ready_files(self):
-        """Return files that have stabilized in size."""
         ready = []
         now = time.time()
-        with self.lock:
-            for path, t in list(self.pending_files.items()):
-                if now - t >= BATCH_INTERVAL and is_file_ready(path):
-                    ready.append(path)
-                    del self.pending_files[path]
+        for path, t in list(self.pending_files.items()):
+            if now - t >= BATCH_INTERVAL and is_file_ready(path):
+                ready.append(path)
+                del self.pending_files[path]
         return ready
 
 def is_file_ready(path, wait=0.5):
-    """Check if file is fully written."""
+    """Checks if a file has stopped growing in size."""
     try:
-        initial = os.path.getsize(path)
+        initial_size = os.path.getsize(path)
         time.sleep(wait)
-        return os.path.exists(path) and os.path.getsize(path) == initial
+        return os.path.exists(path) and os.path.getsize(path) == initial_size
     except FileNotFoundError:
         return False
 
 def worker(queue, upscaler, replace_file, output_dir):
-    """Process images from the queue."""
+    """Processes images from the queue."""
     while True:
         img_path = queue.get()
         try:
@@ -56,44 +78,56 @@ def worker(queue, upscaler, replace_file, output_dir):
             else:
                 Path(output_dir).mkdir(parents=True, exist_ok=True)
                 output_path = Path(output_dir) / input_path.name
-
+            
+            logging.info(f"Processing started: {output_path.name}")
             upscaler.upscale_image(str(input_path), str(output_path))
+            logging.info(f"Job finished: {output_path.name}")
+
         except Exception as e:
-            print(f"Error processing {img_path}: {e}")
+            logging.error(f"Job failed for '{img_path}': {e}", exc_info=True)
         finally:
             queue.task_done()
 
 def main():
-    import configparser
-
-    # Load settings
+    setup_logging()
+    logging.info("--- ChromaScale Watcher Service Starting ---")
+    
     config = configparser.ConfigParser()
+    if not CONFIG_PATH.exists():
+        logging.error(f"CRITICAL: Configuration file not found at {CONFIG_PATH}")
+        return
     config.read(CONFIG_PATH)
-    input_dir = config["paths"]["input_dir"]
-    output_dir = config["paths"]["output_dir"]
-    replace_file = config.getboolean("paths", "replace_file")
 
-    # Initialize upscaler
-    model_path = Path(__file__).parent / "RealESRGAN_x4plus.pth"
+    try:
+        input_dir = config["paths"]["input_dir"]
+        output_dir = config["paths"]["output_dir"]
+        replace_file = config.getboolean("paths", "replace_file")
+    except KeyError as e:
+        logging.error(f"CRITICAL: Missing key in settings.ini: {e}.")
+        return
+
+    if not input_dir or not Path(input_dir).is_dir():
+        logging.error(f"CRITICAL: Input directory '{input_dir}' does not exist or is not set.")
+        return
+
+    model_path = WORK_DIR / "src" / "RealESRGAN_x4plus.pth"
     upscaler = ImageUpscaler(str(model_path))
-
-    # Queue and worker thread
+    
     queue = Queue()
-    thread = Thread(target=worker, args=(queue, upscaler, replace_file, output_dir), daemon=True)
-    thread.start()
+    Thread(target=worker, args=(queue, upscaler, replace_file, output_dir), daemon=True).start()
 
-    # Watch folder
     event_handler = DebouncedHandler(queue)
     observer = Observer()
     observer.schedule(event_handler, input_dir, recursive=False)
     observer.start()
-    print(f"Watching {input_dir} for new images...")
+    logging.info(f"--- Watching '{input_dir}' for new images ---")
 
     try:
         while True:
-            # Collect ready files and add to queue
+            # CORRECTED LINE: Call get_ready_files() on the event_handler directly.
             ready_files = event_handler.get_ready_files()
             for file in ready_files:
+                logging.info(f"Job accepted: {Path(file).name}")
                 queue.put(file)
             time.sleep(0.5)
     except KeyboardInterrupt:
@@ -101,4 +135,7 @@ def main():
     observer.join()
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        logging.critical("A fatal exception occurred in main", exc_info=True)
