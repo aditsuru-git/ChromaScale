@@ -47,21 +47,23 @@
 > ChromaScale is in a beta version. Please be cautious while using the application and setting it up. If you find any bugs, please report them!
 
 <div align="center">
-  <img src="./assets/demo-image.png" alt="Demo" width="100%" style="max-width: 1200px;">
+  <img src="https://github.com/aditsuru-git/ChromaScale/blob/main/assets/demo-image.png?raw=true" alt="Before and After Comparison" width="100%" style="max-width: 800px;">
+  <br/>
 </div>
 
 ChromaScale is an automated image upscaling service for Ubuntu that runs quietly in the background. Simply drop your low-resolution images into a target folder, and ChromaScale uses a powerful AI model to enhance them and save to the configured output directory — no manual intervention required.
 
 <div align="center">
-  <img src="./assets/demo-gif.gif" alt="Demo" width="100%" style="max-width: 1200px;">
+  <img src="https://github.com/aditsuru-git/ChromaScale/blob/main/assets/demo-gif.gif?raw=true" alt="ChromaScale Demo GIF" width="100%" style="max-width: 800px;">
 </div>
 
 **Core Features:**
 
 - **✨ Fully Automated:** Runs as a background service, starts on boot, and automatically restarts on crash.
 - **🖼️ High-Quality Upscaling:** Uses the Real-ESRGAN model to deliver 4x upscaling while handling noise and artifacts.
+- **🧠 Smart Processing:** Automatically skips images that are already high-resolution, saving time and resources.
 - **⚡ Queue-Based Processing:** Handles multiple images arriving simultaneously without missing any.
-- **🔧 Configurable:** Input/output folders and “replace-file” mode can be set with a simple CLI tool.
+- **🔧 Configurable:** A simple CLI tool to manage folders, processing device, and resolution thresholds.
 - **💻 GPU Accelerated:** Automatically uses your NVIDIA GPU if available; falls back to CPU otherwise.
 
 ### 🛠️ Built With
@@ -89,18 +91,14 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 ### Installation
 
 1.  Clone the repository and navigate into the directory:
-
     ```sh
     git clone https://github.com/aditsuru-git/ChromaScale.git
     cd ChromaScale
     ```
-
 2.  Make the setup script executable:
-
     ```sh
     chmod +x setup.sh
     ```
-
 3.  Run the setup script:
     ```sh
     ./setup.sh
@@ -124,18 +122,18 @@ ChromaScale is designed to run in the background with zero effort. You can manag
 First, tell ChromaScale which folders to use.
 
 ```sh
-# Create your input and output folders
+# Create your input and output folders in your home Pictures directory
 mkdir -p ~/Pictures/To-Upscale
 mkdir -p ~/Pictures/Upscaled-Images
 
-# Configure the service to use these folders
-chromascale set --input ~/Pictures/To-Upscale --output ~/Pictures/Upscaled-Images
+# Configure the service to use these folders and set a smart skip threshold
+chromascale set --input ~/Pictures/To-Upscale --output ~/Pictures/Upscaled-Images --threshold 1900
 
 # Restart the service to apply the new settings
 chromascale restart
 ```
 
-Now, any image you drop into `~/Pictures/To-Upscale` will be automatically processed and saved in `~/Pictures/Upscaled-Images`.
+Now, any image smaller than 1900px will be upscaled, while larger images will be skipped and moved automatically.
 
 ---
 
@@ -171,26 +169,29 @@ Now, any image you drop into `~/Pictures/To-Upscale` will be automatically proce
   chromascale service-logs
   ```
 
-**Configuration & Diagnostics:**
+**Configuration:**
 
 - Check if an NVIDIA GPU is detected:
   ```sh
   chromascale check-gpu
   ```
-- Configure the input/output folders or change the file replacement mode:
+- Configure the application with the `set` command:
 
   ```sh
   # Set the folder to watch for new images
-  chromascale set --input /path/to/your/input_folder
+  chromascale set --input ~/Pictures/New-Images
 
   # Set the folder to save finished images
-  chromascale set --output /path/to/your/output_folder
+  chromascale set --output ~/Pictures/Finished-Images
 
   # Enable in-place replacement (overwrites original files)
   chromascale set --replace
 
-  # Disable in-place replacement (saves to output folder)
-  chromascale set --no-replace
+  # (Advanced) Force the app to use the CPU to avoid memory errors on the GPU
+  chromascale set --device cpu
+
+  # (Advanced) Skip upscaling any image wider or taller than 1900px to prevent crashes
+  chromascale set --threshold 1900
   ```
 
   > **Note:** The `output` directory is ignored when `--replace` mode is active.
@@ -200,6 +201,7 @@ Now, any image you drop into `~/Pictures/To-Upscale` will be automatically proce
 - [x] Core background service with Real-ESRGAN
 - [x] Queue-based image processing
 - [x] Command-line interface for service management
+- [x] Smart skipping for high-resolution images
 - [ ] Support for additional upscaling models (e.g., anime)
 - [ ] Optional GUI for configuration and monitoring
 
