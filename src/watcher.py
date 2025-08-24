@@ -52,7 +52,7 @@ def is_file_ready(path, wait=0.5):
 
 # --- CORRECTED WORKER FUNCTION ---
 def worker(queue, upscaler, replace_file, output_dir, skip_threshold):
-    """Processes images from the queue, with a check for high-resolution files."""
+    """Processes images from the queue with robust replace and skip logic."""
     while True:
         img_path = queue.get()
         try:
@@ -62,40 +62,47 @@ def worker(queue, upscaler, replace_file, output_dir, skip_threshold):
             if image is None:
                 logging.warning(f"Could not read image file, skipping: {input_path.name}")
                 continue
-                
+            
             height, width, _ = image.shape
             
             if width > skip_threshold or height > skip_threshold:
                 logging.info(f"Skipping upscale for '{input_path.name}' (resolution {width}x{height} exceeds threshold of {skip_threshold}px).")
-                
-                if replace_file:
-                    logging.info("Leaving original file in place due to replace_file=True setting.")
-                else:
+                if not replace_file:
                     new_stem = f"{input_path.stem}(already_high_res)"
                     new_name = f"{new_stem}{input_path.suffix}"
                     destination_path = Path(output_dir) / new_name
-                    
                     Path(output_dir).mkdir(parents=True, exist_ok=True)
                     shutil.move(img_path, destination_path)
                     logging.info(f"Moved original file to: {destination_path}")
-                
-                # We simply continue, the 'finally' block will handle task_done()
+                else:
+                    logging.info("Leaving original file in place due to replace_file=True setting.")
                 continue
-            
+
+            # --- ROBUST UPSCALING LOGIC ---
             if replace_file:
-                output_path = input_path
+                # Use a temporary file for the output to avoid race conditions
+                temp_output_path = input_path.parent / f"{input_path.stem}.tmp{input_path.suffix}"
+                try:
+                    logging.info(f"Processing started (in-place): {input_path.name}")
+                    upscaler.upscale_image(str(input_path), str(temp_output_path))
+                    # Atomically replace the original with the upscaled version
+                    shutil.move(str(temp_output_path), str(input_path))
+                    logging.info(f"Job finished (in-place): {input_path.name}")
+                finally:
+                    # Ensure the temp file is cleaned up if it still exists
+                    if temp_output_path.exists():
+                        os.remove(temp_output_path)
             else:
-                Path(output_dir).mkdir(parents=True, exist_ok=True)
+                # Standard behavior: save to output directory
                 output_path = Path(output_dir) / input_path.name
-            
-            logging.info(f"Processing started: {output_path.name}")
-            upscaler.upscale_image(str(input_path), str(output_path))
-            logging.info(f"Job finished: {output_path.name}")
+                Path(output_dir).mkdir(parents=True, exist_ok=True)
+                logging.info(f"Processing started: {output_path.name}")
+                upscaler.upscale_image(str(input_path), str(output_path))
+                logging.info(f"Job finished: {output_path.name}")
 
         except Exception as e:
             logging.error(f"Job failed for '{img_path}': {e}", exc_info=True)
         finally:
-            # This will now be called exactly once for every item.
             queue.task_done()
 
 # --- (main function remains the same) ---
@@ -109,7 +116,7 @@ def main():
     try:
         input_dir = config["paths"]["input_dir"]
         output_dir = config["paths"]["output_dir"]
-        replace_file = config.getboolean("paths", "replace_file")
+        replace_file = config.getboolean("paths", "replace_file", fallback=False)
         device_mode = config.get("paths", "device_mode", fallback="auto")
         skip_threshold = config.getint("paths", "skip_resolution_threshold", fallback=2000)
     except KeyError as e:
